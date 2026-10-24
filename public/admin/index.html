@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Admin · Naruto Anime &amp; Shop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Manrope:wght@400;600;700;800&family=Noto+Serif+JP:wght@900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+  <!-- Login -->
+  <section id="login" class="login hidden">
+    <form id="loginForm" class="login-card">
+      <div class="logo"><span class="logo-mark">忍</span><div><b>ADMIN</b><small>Naruto Anime &amp; Shop</small></div></div>
+      <p class="muted">Вход разрешён только администратору.</p>
+      <label>Email<input name="email" type="email" required autocomplete="username" placeholder="admin@example.com"></label>
+      <label>Пароль<input name="password" type="password" required autocomplete="current-password"></label>
+      <button class="btn primary">Войти</button>
+      <p class="err" id="loginErr"></p>
+    </form>
+  </section>
+
+  <!-- App -->
+  <div id="shell" class="shell hidden">
+    <aside class="side">
+      <div class="logo"><span class="logo-mark">忍</span><div><b>ADMIN</b><small id="adminEmail"></small></div></div>
+      <nav>
+        <a data-tab="dashboard" class="active">📊 Обзор</a>
+        <a data-tab="orders">🧾 Заказы <span class="pill" id="ordersPill"></span></a>
+        <a data-tab="products">🛍 Товары</a>
+        <a data-tab="episodes">🎬 Серии</a>
+        <a data-tab="news">📰 Новости</a>
+        <a data-tab="messages">📩 Сообщения</a>
+      </nav>
+      <div class="side-foot">
+        <a href="/" target="_blank" class="btn ghost sm">Открыть сайт ↗</a>
+        <button id="logout" class="btn ghost sm">Выйти</button>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="top"><button id="menuBtn" class="btn ghost sm menu-btn">☰</button><h1 id="title">Обзор</h1><div id="topActions"></div></header>
+      <div id="view"></div>
+    </main>
+  </div>
+
+  <dialog id="dlg"><form method="dialog" id="dlgForm" enctype="multipart/form-data"></form></dialog>
+  <div id="toast"></div>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>
