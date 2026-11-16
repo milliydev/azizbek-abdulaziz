@@ -15,7 +15,12 @@
   else document.documentElement.classList.add('no-gsap');
 
   const S = {
-    lang: store.get('lang', (navigator.language || 'ru').startsWith('ru') ? 'ru' : 'en'),
+    lang: (() => {
+      const saved = store.get('lang', null);
+      if (saved && window.I18N[saved]) return saved;
+      const nav = (navigator.language || 'uz').toLowerCase();
+      return nav.startsWith('ru') ? 'ru' : nav.startsWith('en') ? 'en' : 'uz';
+    })(),
     cart: store.get('cart', []),
     config: { currency: 'USD', shipping: { fee: 7, freeFrom: 80 }, botUsername: null, paymentMode: 'demo' },
     products: [], episodes: [], news: [], user: null,
@@ -30,8 +35,10 @@
     return v == null ? path : v;
   }
   const L = (obj) => (obj && (obj[S.lang] || obj.en || obj.ru)) || '';
-  const money = (n) => new Intl.NumberFormat(S.lang === 'ru' ? 'ru-RU' : 'en-US', { style: 'currency', currency: S.config.currency || 'USD' }).format(n || 0);
-  const date = (d) => new Date(d).toLocaleDateString(S.lang === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+  const LOCALES = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' };
+  const locale = () => LOCALES[S.lang] || 'en-US';
+  const money = (n) => new Intl.NumberFormat(locale(), { style: 'currency', currency: S.config.currency || 'USD' }).format(n || 0);
+  const date = (d) => new Date(d).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' });
 
   function applyStatic() {
     document.documentElement.lang = S.lang;
@@ -45,7 +52,8 @@
   async function api(path, opts = {}) {
     const init = { credentials: 'same-origin', ...opts, headers: { ...(opts.headers || {}) } };
     if (opts.body && !(opts.body instanceof FormData)) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
-    const res = await fetch(`/api${path}`, init);
+    let res;
+    try { res = await fetch(`/api${path}`, init); } catch { const e = new Error('network'); e.status = 0; throw e; }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { const e = new Error(data.error || 'error'); e.status = res.status; throw e; }
     return data;
@@ -469,7 +477,7 @@
       try {
         await loadScript('https://js.stripe.com/v3/');
         stripe = window.Stripe(S.config.stripePublishableKey);
-        card = stripe.elements({ locale: S.lang }).create('card', { style: { base: { color: '#f4efe9', fontSize: '16px', '::placeholder': { color: '#9b93a6' } } } });
+        card = stripe.elements({ locale: S.lang === 'uz' ? 'auto' : S.lang }).create('card', { style: { base: { color: '#f4efe9', fontSize: '16px', '::placeholder': { color: '#9b93a6' } } } });
         card.mount('#stripe-card');
       } catch { toast(t('common.error'), 'error'); }
     } else {
@@ -656,13 +664,30 @@
     }
     const authForm = $('#authForm');
     if (authForm) {
+      const AUTH_ERRORS = {
+        email_taken: 'profile.taken', invalid_credentials: 'profile.invalid', invalid_email: 'profile.badEmail',
+        password_short: 'profile.shortPassword', name_required: 'errors.name_required', network: 'profile.network',
+      };
       authForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const mode = authForm.dataset.mode;
+        const body = Object.fromEntries(new FormData(authForm));
+        body.email = String(body.email || '').trim();
+        if (mode === 'register' && !String(body.name || '').trim()) return toast(t('errors.name_required'), 'error');
+        if (!/^\S+@\S+\.\S+$/.test(body.email)) return toast(t('profile.badEmail'), 'error');
+        if (String(body.password || '').length < 6) return toast(t('profile.shortPassword'), 'error');
+        const btn = authForm.querySelector('button');
+        btn.disabled = true;
         try {
-          S.user = await api(`/auth/${authForm.dataset.mode}`, { method: 'POST', body: Object.fromEntries(new FormData(authForm)) });
-          location.hash = '#/profile';
-          render();
-        } catch (err) { toast(err.status === 409 ? t('profile.taken') : t('profile.invalid'), 'error'); }
+          S.user = await api(`/auth/${mode}`, { method: 'POST', body });
+          toast(mode === 'register' ? t('profile.registered') : `${t('profile.welcome')}, ${S.user.name}`);
+          if (location.hash === '#/profile') render();
+          else location.hash = '#/profile'; // hashchange re-renders
+        } catch (err) {
+          btn.disabled = false;
+          const key = AUTH_ERRORS[err.message] || (err.status === 429 ? 'profile.tooMany' : 'common.error');
+          toast(t(key), 'error');
+        }
       });
     }
     const meForm = $('#meForm');

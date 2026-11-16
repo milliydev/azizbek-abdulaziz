@@ -78,7 +78,7 @@ r.post('/orders', limiter(30), optionalUser, async (req, res) => {
       payment = { method: 'card_demo', status: 'paid', brand: orders.clean(p.brand, 20) || 'card', last4: String(p.last4), cardholder: orders.clean(p.cardholder, 80) };
     }
     const order = await orders.createOrder({
-      customer, items, total, shipping, payment, source: 'web', userId: req.user ? req.user.id : null, lang: req.body.lang === 'en' ? 'en' : 'ru',
+      customer, items, total, shipping, payment, source: 'web', userId: req.user ? req.user.id : null, lang: ['en', 'ru', 'uz'].includes(req.body.lang) ? req.body.lang : 'ru',
     });
     res.json({ ok: true, order: orders.publicOrder(order) });
   } catch (e) { fail(res, e); }
@@ -112,7 +112,9 @@ r.post('/auth/register', limiter(20), async (req, res) => {
   const email = String(req.body.email || '').toLowerCase().trim();
   const password = String(req.body.password || '');
   const name = orders.clean(req.body.name, 120);
-  if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 6 || !name) return res.status(400).json({ error: 'invalid' });
+  if (!name) return res.status(400).json({ error: 'name_required' });
+  if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: 'invalid_email' });
+  if (password.length < 6) return res.status(400).json({ error: 'password_short' });
   if (db.all('users').some((u) => u.email === email)) return res.status(409).json({ error: 'email_taken' });
   const user = db.insert('users', { email, name, passwordHash: await bcrypt.hash(password, 10) });
   res.cookie('user_token', sign({ role: 'user', id: user.id, email }), COOKIE).json(userOut(user));
