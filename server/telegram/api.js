@@ -1,4 +1,4 @@
-// Minimal Telegram Bot API client built on Node's native fetch (Node 18+). No extra dependencies.
+// Minimal Telegram Bot API client built on Node's native fetch (Node 18+). No extra dependencies.'p'l/
 const fs = require('fs');
 const path = require('path');
 const config = require('../config');
