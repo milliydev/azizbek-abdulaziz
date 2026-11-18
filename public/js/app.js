@@ -38,7 +38,12 @@
   const LOCALES = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' };
   const locale = () => LOCALES[S.lang] || 'en-US';
   const money = (n) => new Intl.NumberFormat(locale(), { style: 'currency', currency: S.config.currency || 'USD' }).format(n || 0);
-  const date = (d) => new Date(d).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' });
+  const UZ_MONTHS = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'];
+  const date = (d) => {
+    const x = new Date(d);
+    if (S.lang === 'uz') return `${x.getDate()}-${UZ_MONTHS[x.getMonth()]}, ${x.getFullYear()}`;
+    return x.toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' });
+  };
 
   function applyStatic() {
     document.documentElement.lang = S.lang;
@@ -49,7 +54,18 @@
   }
 
   // ---------- API ----------
+  // Use the Node server when it is reachable; otherwise run fully in the browser (localStorage).
+  const modeReady = (async () => {
+    if (location.protocol === 'file:' || !window.fetch) return 'local';
+    try {
+      const r = await fetch('/api/config', { credentials: 'same-origin' });
+      if (r.ok && (r.headers.get('content-type') || '').includes('json')) return 'server';
+    } catch { /* no server */ }
+    return 'local';
+  })();
+
   async function api(path, opts = {}) {
+    if ((await modeReady) === 'local') return window.LocalAPI.handle(path, opts);
     const init = { credentials: 'same-origin', ...opts, headers: { ...(opts.headers || {}) } };
     if (opts.body && !(opts.body instanceof FormData)) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
     let res;

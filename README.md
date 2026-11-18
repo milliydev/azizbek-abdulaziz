@@ -99,3 +99,13 @@ pm2 save
 ## Контент и права
 
 Фото товаров и видео в комплекте — **заглушки**. Замените их в админке своими фотографиями и **видео, на распространение которых у вас есть права** (лицензия, официальные embed-ссылки). Публикация чужих серий без лицензии нарушает авторские права и может привести к блокировке сайта и бота. Официальные логотипы и персонажи в дизайне не используются; проект оформлен как фан-магазин.
+
+## Serversiz rejim (localStorage)
+
+`public/index.html` faylini to'g'ridan-to'g'ri brauzerda ochsangiz yoki istalgan statik hostingga
+(GitHub Pages, Netlify, Live Server) qo'ysangiz, sayt Node serversiz ishlaydi:
+ro'yxatdan o'tish, kirish, savat, buyurtma va buyurtmani kuzatish brauzerning `localStorage`ida saqlanadi
+(`public/js/local-api.js`, katalog: `public/js/seed-data.js`).
+
+Server (`npm start`) ishlab tursa, sayt avtomatik ravishda serverdan foydalanadi.
+Serversiz rejimda ma'lumotlar faqat shu brauzerda saqlanadi; admin panel va Telegram bot ishlamaydi.
